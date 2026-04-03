@@ -90,14 +90,14 @@ pipeline-intelligence/
 
 ### 🔹 TASK 2: Generate Simulated Pipeline Data
 
-* [ ] Create dataset with:
+* [x] Create dataset with:
 
   * temperature
   * pressure
   * flow rate
   * time_of_day
-* [ ] Add noise (realism)
-* [ ] Save as CSV
+* [x] Add noise (realism)
+* [x] Save as CSV
 
 ✔ Output: `data/simulated.csv`
 
