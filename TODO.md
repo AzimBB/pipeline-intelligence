@@ -81,10 +81,10 @@ pipeline-intelligence/
 
 ### 🔹 TASK 1: Setup Project
 
-* [ ] Create project folder
-* [ ] Setup virtual environment
-* [ ] Install dependencies
-* [ ] Create folder structure
+* [x] Create project folder
+* [x] Setup virtual environment
+* [x] Install dependencies
+* [x] Create folder structure
 
 ---
 
