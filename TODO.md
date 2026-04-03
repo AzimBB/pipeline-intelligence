@@ -157,13 +157,13 @@ pipeline-intelligence/
 
 ### 🔹 TASK 7: Earthquake Alert System
 
-* [ ] Connect to USGS API
-* [ ] Get recent earthquakes
-* [ ] Filter by:
+* [x] Connect to USGS API
+* [x] Get recent earthquakes
+* [x] Filter by:
 
   * magnitude
   * distance (mock)
-* [ ] Display alerts
+* [x] Display alerts
 
 ✔ Output: real-time risk alerts
 
@@ -171,10 +171,10 @@ pipeline-intelligence/
 
 ### 🔹 TASK 8: Hydrate Formation Detection
 
-* [ ] Define rule:
+* [x] Define rule:
 
   * low temp + high pressure
-* [ ] Mark risk zones
+* [x] Mark risk zones
 
 ✔ Output: hydrate warnings
 
@@ -186,12 +186,12 @@ pipeline-intelligence/
 
 ### 🔹 TASK 9: Streamlit Dashboard UI
 
-* [ ] Layout:
+* [x] Layout:
 
   * Sidebar (controls)
   * Main charts
   * Alerts panel
-* [ ] Add:
+* [x] Add:
 
   * live metrics
   * prediction output
@@ -200,22 +200,22 @@ pipeline-intelligence/
 
 ### 🔹 TASK 10: Alerts System
 
-* [ ] Display:
+* [x] Display:
 
   * pressure anomalies
   * earthquake warnings
   * hydrate risks
-* [ ] Use color coding
+* [x] Use color coding
 
 ---
 
 ### 🔹 TASK 11: Scenario Simulation
 
-* [ ] Add sliders:
+* [x] Add sliders:
 
   * temperature
   * solar radiation
-* [ ] Show predicted pressure
+* [x] Show predicted pressure
 
 ✔ Output: interactive demo
 
