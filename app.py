@@ -49,8 +49,36 @@ input_df = pd.DataFrame([{
 input_scaled = scaler.transform(input_df)
 prediction = model.predict(input_scaled)[0]
 
+# Alerts 
+
 threshold = st.sidebar.slider("Anomaly Threshold", 120, 180, 140)
 st.caption(f"Active threshold: {threshold}")
+
+
+st.markdown("### 🚨 Alert Panel")
+
+alerts = []
+if prediction > threshold:
+    alerts.append("🔴 Critical Pressure Predicted")
+
+elif prediction > threshold - 10:
+    alerts.append("⚠️ Pressure Rising Warning")
+
+if input_temp < 5 and prediction > 120:
+    alerts.append("❄️ Hydrate Formation Risk")
+
+if input_solar > 600 and input_temp > 25:
+    alerts.append("🌡️ Thermal Expansion Risk")
+
+if input_flow > 58:
+    alerts.append("⚠️ High Flow Rate Detected")
+
+if alerts:
+    for alert in alerts:
+        st.error(alert)
+else:
+    st.success("✅ System Stable")
+
 
 time_range = st.sidebar.slider(
     "Select Time Range",
