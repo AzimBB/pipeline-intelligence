@@ -132,13 +132,13 @@ pipeline-intelligence/
 
 ### 🔹 TASK 5: Pressure Prediction Model (MLP)
 
-* [ ] Prepare dataset
-* [ ] Normalize inputs
-* [ ] Train simple MLP:
+* [x] Prepare dataset
+* [x] Normalize inputs
+* [x] Train simple MLP:
 
   * Input: temp, solar, time
   * Output: pressure
-* [ ] Save model
+* [x] Save model
 
 ✔ Output: Working prediction
 
@@ -146,10 +146,10 @@ pipeline-intelligence/
 
 ### 🔹 TASK 6: Anomaly Detection
 
-* [ ] Define anomaly rule:
+* [x] Define anomaly rule:
 
   * deviation threshold OR z-score
-* [ ] Flag abnormal pressure points
+* [x] Flag abnormal pressure points
 
 ✔ Output: anomaly alerts
 
