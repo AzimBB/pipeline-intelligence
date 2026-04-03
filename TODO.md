@@ -105,12 +105,12 @@ pipeline-intelligence/
 
 ### 🔹 TASK 3: Fetch Real Weather Data
 
-* [ ] Connect to NASA POWER API
-* [ ] Fetch:
+* [x] Connect to NASA POWER API
+* [x] Fetch:
 
   * temperature
   * solar radiation
-* [ ] Store locally
+* [x] Store locally
 
 ✔ Output: `data/weather.csv`
 
@@ -118,9 +118,9 @@ pipeline-intelligence/
 
 ### 🔹 TASK 4: Basic Visualization
 
-* [ ] Plot pressure vs time
-* [ ] Plot temperature vs pressure
-* [ ] Add Streamlit charts
+* [x] Plot pressure vs time
+* [x] Plot temperature vs pressure
+* [x] Add Streamlit charts
 
 ✔ Output: Basic dashboard running
 
