@@ -4,6 +4,9 @@ import plotly.express as px
 import joblib
 import numpy as np
 import datetime
+from utils.physics import compute_pressure_profile, hydrate_risk
+import random
+from utils.weather_mapper import load_weather, get_weather_for_time
 
 # -------------------------------
 # CONFIG
@@ -27,6 +30,8 @@ def load_data():
 model, scaler = load_model()
 df = load_data()
 
+weather_df = load_weather()
+
 # -------------------------------
 # SEGMENT SIMULATION
 # -------------------------------
@@ -43,6 +48,9 @@ input_temp = st.sidebar.slider("Temperature", -20.0, 40.0, 15.0)
 input_solar = st.sidebar.slider("Solar Radiation", 0.0, 800.0, 200.0)
 input_flow = st.sidebar.slider("Flow Rate", 40.0, 60.0, 50.0)
 input_time = st.sidebar.slider("Time of Day", 0, 23, 12)
+
+
+
 
 # Auto day_of_year
 today = datetime.datetime.now()
@@ -276,12 +284,20 @@ from utils.graph_loader import load_graph
 
 nodes, edges = load_graph()
 
+
+# map ops 
+
+node_ids = list(nodes.keys())
+
+start_node = st.sidebar.selectbox("Start Node", node_ids[:1000])
+end_node = st.sidebar.selectbox("End Node", node_ids[:1000], index=10)
+
 # Center map
 first_node = list(nodes.values())[0]
 m = folium.Map(location=[first_node["lat"], first_node["lon"]], zoom_start=6)
 
 # Draw edges
-for e in edges[:2000]:  # limit for performance
+for e in edges[:1000]:  # limit for performance
     n1 = nodes[e["from"]]
     n2 = nodes[e["to"]]
 
@@ -293,4 +309,99 @@ for e in edges[:2000]:  # limit for performance
     ).add_to(m)
 
 st.subheader("Pipeline Map")
+
+
+from utils.pathfinding import build_graph, dijkstra
+
+graph = build_graph(edges)
+
+path, distance = dijkstra(graph, start_node, end_node)
+
+
+# -------------------------------
+# GET WEATHER FIRST
+# -------------------------------
+temps = []
+solar_vals = []
+
+for i in range(len(path) - 1):
+    temp, solar = get_weather_for_time(weather_df, input_time)
+    temps.append(temp)
+    solar_vals.append(solar)
+
+# -------------------------------
+# PHYSICS SIMULATION
+# -------------------------------
+if path:
+    pressures = compute_pressure_profile(
+        path,
+        nodes,
+        solar_vals,
+        base_pressure=prediction,
+        flow_rate=input_flow
+    )
+
+
+    for i in range(len(pressures)):
+        temp, solar = get_weather_for_time(weather_df, input_time)
+        temps.append(temp)
+        solar_vals.append(solar)
+
+    # Detect hydrate risks
+    risk_points = []
+    for i in range(len(pressures)):
+        if hydrate_risk(temps[i], pressures[i]):
+            risk_points.append(i)
+
+    st.subheader("Pressure Profile Along Route")
+    st.line_chart(pressures)
+    # -------------------------------
+    # PRESSURE ALERTS
+    # -------------------------------
+    if min(pressures) < 80:
+        st.error("🔴 Critical pressure drop detected")
+
+    if max(pressures) > 140:
+        st.error("🔴 Dangerous high pressure zone")
+
+    if any(t < 0 for t in temps):
+        st.warning("❄️ Freezing conditions detected along route")
+
+    if max(solar_vals) > 700:
+        st.warning("🌡️ High solar exposure on pipeline")
+
+st.subheader("Route Analysis")
+
+if path:
+    st.success(f"Route found! Distance: {round(distance, 2)} km")
+else:
+    st.error("No route found")
+
+if path:
+    for i in range(len(path) - 1):
+        n1 = nodes[path[i]]
+        n2 = nodes[path[i + 1]]
+
+        folium.PolyLine(
+            [(n1["lat"], n1["lon"]), (n2["lat"], n2["lon"])],
+            color="blue",
+            weight=4
+        ).add_to(m)
+
+    # -------------------------------
+    # HYDRATE RISK MARKERS
+    # -------------------------------
+    for i in risk_points:
+        node = nodes[path[i]]
+
+        folium.CircleMarker(
+            location=[node["lat"], node["lon"]],
+            radius=5,
+            color="blue",
+            fill=True,
+            fill_color="blue",
+            popup="Hydrate Risk"
+        ).add_to(m)
+
+
 st_folium(m, width=1000, height=600)
