@@ -403,5 +403,13 @@ if path:
             popup="Hydrate Risk"
         ).add_to(m)
 
-
-st_folium(m, width=1000, height=600)
+# -------------------------------
+# THE FIX: ADDING THE DYNAMIC KEY
+# -------------------------------
+st_folium(
+    m, 
+    width=1000, 
+    height=600, 
+    key=f"map_{start_node}_{end_node}", 
+    returned_objects=[]
+)
