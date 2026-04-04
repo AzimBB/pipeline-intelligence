@@ -270,3 +270,27 @@ fig2 = px.scatter(
 
 st.plotly_chart(fig2, use_container_width=True)
 
+import folium
+from streamlit_folium import st_folium
+from utils.graph_loader import load_graph
+
+nodes, edges = load_graph()
+
+# Center map
+first_node = list(nodes.values())[0]
+m = folium.Map(location=[first_node["lat"], first_node["lon"]], zoom_start=6)
+
+# Draw edges
+for e in edges[:2000]:  # limit for performance
+    n1 = nodes[e["from"]]
+    n2 = nodes[e["to"]]
+
+    folium.PolyLine(
+        [(n1["lat"], n1["lon"]), (n2["lat"], n2["lon"])],
+        color="red",
+        weight=2,
+        opacity=0.6
+    ).add_to(m)
+
+st.subheader("Pipeline Map")
+st_folium(m, width=1000, height=600)
