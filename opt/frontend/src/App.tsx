@@ -23,6 +23,19 @@ function App() {
     fetchData();
   }, [inputs]);
 
+  const [threshold, _] = useState(140); // Your original default
+
+  const getAlerts = () => {
+    const alerts = [];
+    if (prediction && prediction > threshold) alerts.push("🔴 Critical Pressure Predicted");
+    if (inputs.temperature < 5 && prediction && prediction > 120) alerts.push("❄️ Hydrate Formation Risk");
+    if (inputs.solar_radiation > 600 && inputs.temperature > 25) alerts.push("🌡️ Thermal Expansion Risk");
+    if (inputs.flow_rate > 58) alerts.push("⚠️ High Flow Rate Detected");
+    return alerts;
+  };
+
+  const activeAlerts = getAlerts();
+
   return (
     <div className="dashboard-container" style={{ display: 'flex', height: '100vh', backgroundColor: '#0f172a', color: 'white' }}>
 
@@ -91,13 +104,29 @@ function App() {
           </div>
         </div>
 
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', minHeight: '40px' }}>
+          {activeAlerts.map((alert, i) => (
+            <div key={i} style={{
+              padding: '8px 12px',
+              borderRadius: '6px',
+              background: alert.includes('🔴') ? '#450a0a' : '#1e293b',
+              border: `1px solid ${alert.includes('🔴') ? '#ef4444' : '#3b82f6'}`,
+              fontSize: '0.8rem',
+              color: alert.includes('🔴') ? '#fca5a5' : '#93c5fd'
+            }}>
+              {alert}
+            </div>
+          ))}
+          {activeAlerts.length === 0 && <div style={{ color: '#10b981' }}>✅ System Stable</div>}
+        </div>
+
         {/* 3D VIEWPORT PLACEHOLDER */}
         <div id="canvas-container" style={{ flex: 1, background: '#020617', borderRadius: '16px', border: '1px solid #1e293b', overflow: 'hidden', position: 'relative' }}>
           {/* We will initialize Three.js here */}
           <div style={{ position: 'absolute', top: '20px', left: '20px', color: '#475569', fontSize: '0.8rem' }}>
             <div id="canvas-container" style={{ flex: 1, background: '#020617', borderRadius: '16px', border: '1px solid #1e293b', overflow: 'hidden', position: 'relative' }}>
               <Canvas>
-                <Pipeline3D pressure={prediction} />
+                <Pipeline3D pressure={prediction} threshold={threshold} />
               </Canvas>
             </div>
           </div>
