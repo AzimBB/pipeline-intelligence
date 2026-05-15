@@ -45,7 +45,7 @@ export function PipelineMap({ points, pressure, threshold }: PipelineMapProps) {
         <MapContainer center={center} zoom={7} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
                 {/* Dark Mode Tiles - easier on the eyes for a "Control Room" feel */}
                 <TileLayer
-                    url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 
                 <Polyline 
