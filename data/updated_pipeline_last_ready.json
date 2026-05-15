@@ -7557,33 +7557,45 @@
             "stations": [
     {
         "station_index": 1,
+        "lat": 38.6120935,
+        "lon": 64.755208,
+        "distance_from_source_km": 0.0
+    },
+    {
+        "station_index": 2,
         "lat": 40.5607911,
         "lon": 64.7151446,
         "distance_from_source_km": 335.88
     },
     {
-        "station_index": 2,
+        "station_index": 3,
         "lat": 41.6883593,
         "lon": 68.1784066,
         "distance_from_source_km": 673.51
     },
     {
-        "station_index": 3,
+        "station_index": 4,
         "lat": 42.9283727,
         "lon": 71.2006162,
         "distance_from_source_km": 1004.67
     },
     {
-        "station_index": 4,
+        "station_index": 5,
         "lat": 43.7249016,
         "lon": 74.6966457,
         "distance_from_source_km": 1340.83
     },
     {
-        "station_index": 5,
+        "station_index": 6,
         "lat": 43.7355134,
         "lon": 78.8754188,
         "distance_from_source_km": 1702.4
+    },
+    {
+        "station_index": 7,
+        "lat": 44.5485747,
+        "lon": 82.2428584,
+        "distance_from_source_km": 2008.49 
     }
             ],
             "tags": {

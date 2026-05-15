@@ -46,7 +46,6 @@ function App() {
       const stations = data.stations || [];
       
       setPipelinePoints(points);
-      console.log(stations);
       setCompressorStations(stations);
       
       if (points.length > 1) {
