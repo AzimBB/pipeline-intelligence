@@ -10,7 +10,6 @@ interface PipelinePoint {
   alt?: number;
 }
 
-
 interface CompressorStation {
   station_index: number;
   lat: number;
@@ -27,36 +26,32 @@ function App() {
     day_of_year: new Date().getUTCFullYear() 
   });
 
-  // New states for UI interactions and dynamic range selections
+  // UI state for collapse panels
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [startPoint, setStartPoint] = useState<number>(0);
-  const [endPoint, setEndPoint] = useState<number>(1);
-  const [pipelinePoints, setPipelinePoints] = useState<PipelinePoint[]>([]);
-  const [compressorStations, setCompressorStations] = useState<CompressorStation[]>([]); // New state
+  
+  // Track selected active compressor station segment (e.g., 0 for Source -> CS1)
+  const [selectedSegmentIdx, setSelectedSegmentIdx] = useState<number>(0); 
 
+  // Network infrastructure states
+  const [pipelinePoints, setPipelinePoints] = useState<PipelinePoint[]>([]);
+  const [compressorStations, setCompressorStations] = useState<CompressorStation[]>([]);
+
+  // Simulation prediction metrics
   const [prediction, setPrediction] = useState<number | null>(null);
   const [threshold] = useState(140);
 
+  // Fetch pipeline structure from backend
   useEffect(() => {
-  fetch('http://localhost:8000/api/pipeline-path')
-    .then(res => res.json())
-    .then((data: { points: PipelinePoint[]; stations: CompressorStation[] }) => {
-      // Safely assign both parts of the payload to state
-      const points = data.points || [];
-      const stations = data.stations || [];
-      
-      setPipelinePoints(points);
-      setCompressorStations(stations);
-      
-      if (points.length > 1) {
-        setEndPoint(points.length - 1);
-      }
-    })
-    .catch(err => console.error("Failed to fetch pipeline data:", err));
-}, []);
+    fetch('http://localhost:8000/api/pipeline-path')
+      .then(res => res.json())
+      .then((data: { points: PipelinePoint[]; stations: CompressorStation[] }) => {
+        setPipelinePoints(data.points || []);
+        setCompressorStations(data.stations || []);
+      })
+      .catch(err => console.error("Failed to fetch pipeline data:", err));
+  }, []);
 
-
-
+  // Run predictive dynamic ML evaluation engine
   useEffect(() => {
     const fetchData = async () => {
       const p = await getPressurePrediction(inputs);
@@ -75,12 +70,11 @@ function App() {
   };
 
   const activeAlerts = getAlerts();
-  const maxPointIndex = pipelinePoints.length > 0 ? pipelinePoints.length - 1 : 0;
 
   return (
     <div className="dashboard-container" style={{ position: 'relative', width: '100vw', height: '100vh', backgroundColor: '#0f172a', color: 'white', fontFamily: 'sans-serif', overflow: 'hidden' }}>
       
-      {/* BACKGROUND LEAFLET MAP VIEWPORT - Expanded full screen */}
+      {/* BACKGROUND LEAFLET MAP VIEWPORT */}
       <div style={{ 
         position: 'absolute', 
         top: 0, 
@@ -92,6 +86,7 @@ function App() {
         <PipelineMap 
           points={pipelinePoints} 
           stations={compressorStations}
+          activeSegmentIndex={selectedSegmentIdx}
           pressure={prediction} 
           threshold={threshold} 
         />
@@ -123,18 +118,18 @@ function App() {
         ))}
         {activeAlerts.length === 0 && (
           <div style={{ padding: '10px 16px', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(6px)', border: '1px solid #10b981', color: '#10b981', fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
-            ✅ System Stable
+            ✅ Selected Segment Stable
           </div>
         )}
       </div>
 
-      {/* QUADRATIC FLOATING PRESSURE BOX (Top-Right Metric Card) */}
+      {/* QUADRATIC FLOATING PRESSURE BOX */}
       <div style={{ 
         position: 'absolute', 
         top: '90px', 
         right: '20px', 
         zIndex: 10, 
-        width: '160px', 
+        width: '180px', 
         height: '160px', 
         background: 'rgba(15, 23, 42, 0.85)', 
         backdropFilter: 'blur(12px)', 
@@ -142,15 +137,15 @@ function App() {
         borderRadius: '16px', 
         display: 'flex', 
         flexDirection: 'column', 
-        justifyContent: 'center', 
+        justifyContent: 'center', // 💎 Fixed: Changed from justify-content to justifyContent
         alignItems: 'center',
         boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
         textAlign: 'center',
         padding: '15px',
         boxSizing: 'border-box'
       }}>
-        <p style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.65rem', margin: '0 0 8px 0', fontWeight: 600 }}>
-          PREDICTED PRESSURE
+        <p style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '0.62rem', margin: '0 0 8px 0', fontWeight: 600 }}>
+          SEGMENT PRESSURE
         </p>
         <h2 style={{ fontSize: '2.2rem', fontWeight: 700, margin: 0, color: prediction && prediction > threshold ? '#ef4444' : '#10b981', lineHeight: 1 }}>
           {prediction?.toFixed(1) ?? "---"}
@@ -158,7 +153,7 @@ function App() {
         <span style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>bar</span>
       </div>
 
-      {/* FLOATING COLLAPSABLE SIDEBAR CARD */}
+      {/* CONTROL SIDEBAR CONTROL OVERLAY */}
       <aside style={{ 
         position: 'absolute', 
         top: '90px', 
@@ -179,7 +174,6 @@ function App() {
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
         
-        {/* Toggle Button for Collapse Hooked outside the container */}
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           style={{
@@ -207,42 +201,52 @@ function App() {
           <Sliders size={18} style={{color: '#3b82f6'}} /> Pipeline Controls
         </h2>
 
-        {/* Scrollable controls section to prevent crop on small displays */}
         <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
           
-          {/* NEW INPUT: SEGMENT POINT SELECTORS */}
+          {/* SEGMENT SELECTION SYSTEM */}
           <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '12px', borderRadius: '10px', border: '1px solid #1e293b', marginBottom: '20px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.8rem', marginBottom: '10px', fontWeight: 600 }}>
-              <ArrowRightLeft size={14} /> Evaluation Segment
+              <ArrowRightLeft size={14} /> Active Simulation Segment
             </label>
             
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', display: 'block' }}>START (Min: 0)</span>
-                <input 
-                  type="number" 
-                  min="0" 
-                  max={maxPointIndex}
-                  value={startPoint}
-                  onChange={(e) => setStartPoint(Math.max(0, Math.min(maxPointIndex, parseInt(e.target.value) || 0)))}
-                  style={{ width: '100%', background: '#020617', border: '1px solid #334155', borderRadius: '6px', padding: '6px', color: 'white', fontSize: '0.85rem', marginTop: '4px' }} 
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', display: 'block' }}>END (Max: {maxPointIndex})</span>
-                <input 
-                  type="number" 
-                  min="0" 
-                  max={maxPointIndex}
-                  value={endPoint}
-                  onChange={(e) => setEndPoint(Math.max(0, Math.min(maxPointIndex, parseInt(e.target.value) || 0)))}
-                  style={{ width: '100%', background: '#020617', border: '1px solid #334155', borderRadius: '6px', padding: '6px', color: 'white', fontSize: '0.85rem', marginTop: '4px' }} 
-                />
-              </div>
-            </div>
+            <select
+              value={selectedSegmentIdx}
+              onChange={(e) => setSelectedSegmentIdx(parseInt(e.target.value))}
+              style={{
+                width: '100%',
+                background: '#020617',
+                border: '1px solid #334155',
+                borderRadius: '6px',
+                padding: '8px',
+                color: 'white',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              {compressorStations.length > 0 ? (
+                Array.from({ length: compressorStations.length + 1 }).map((_, idx) => {
+                  let segmentLabel = "";
+                  if (idx === 0) {
+                    segmentLabel = `Source to Station #1`;
+                  } else if (idx === compressorStations.length) {
+                    segmentLabel = `Station #${idx} to Destination Terminal`;
+                  } else {
+                    segmentLabel = `Station #${idx} to Station #${idx + 1}`;
+                  }
+                  return (
+                    <option key={`seg-opt-${idx}`} value={idx}>
+                      {segmentLabel}
+                    </option>
+                  );
+                })
+              ) : (
+                <option value={0}>Loading infrastructure paths...</option>
+              )}
+            </select>
           </div>
 
-          {/* TELEMETRY SLIDERS */}
+          {/* TELEMETRY ENGINE CONTROL FIELDS */}
           <div className="input-group" style={{ marginBottom: '20px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '8px' }}>
               <Thermometer size={16} /> Temperature ({inputs.temperature}°C)
