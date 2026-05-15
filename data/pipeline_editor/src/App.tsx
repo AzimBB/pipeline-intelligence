@@ -1,7 +1,7 @@
 import './App.css';
 import PipelineEditor from './components/Map.tsx';
 // 1. Direct import
-import pipeLineData from "../../pipeline_ready.json"; 
+import pipeLineData from "../../updated_pipeline_last_ready.json"; 
 // 2. Import the interface for type safety
 import type { MapData } from './components/MapData'; 
 import 'leaflet/dist/leaflet.css';

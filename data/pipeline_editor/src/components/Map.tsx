@@ -26,6 +26,8 @@ const InvalidateMap = () => {
 const PipelineEditor = ({ initialData }: EditorProps) => {
     const [data, setData] = useState<MapData>(initialData);
     const [selectedWayId, setSelectedWayId] = useState<number | null>(null);
+
+    const [mousePos, setMousePos] = useState<L.LatLng | null>(null);
     
     // Modes
     const [isMergeMode, setIsMergeMode] = useState(false);
@@ -139,7 +141,12 @@ const PipelineEditor = ({ initialData }: EditorProps) => {
                 }
             },
             mousemove(e) {
-                if (isSelecting && startPos) setSelectionBounds(L.latLngBounds(startPos, e.latlng));
+                // Update mouse position state
+                setMousePos(e.latlng);
+                
+                if (isSelecting && startPos) {
+                    setSelectionBounds(L.latLngBounds(startPos, e.latlng));
+                }
             },
             mouseup() {
                 if (isSelecting) {
@@ -215,6 +222,24 @@ const PipelineEditor = ({ initialData }: EditorProps) => {
             <MapContainer center={[41.65, 68.04]} zoom={15} style={{ flex: 1 }}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <InvalidateMap /><MapEvents />
+
+                {mousePos && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '20px',
+                        left: '20px',
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        color: 'white',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        zIndex: 1000,
+                        fontSize: '12px',
+                        pointerEvents: 'none', // Critical: allows clicking "through" the label
+                        fontFamily: 'monospace'
+                    }}>
+                        Lat: {mousePos.lat.toFixed(6)} | Lon: {mousePos.lng.toFixed(6)}
+                    </div>
+                )}
                 {selectionBounds && <Rectangle bounds={selectionBounds} pathOptions={{ color: 'red', fillOpacity: 0.1, weight: 1 }} />}
 
                 {data.elements.map((way) => {

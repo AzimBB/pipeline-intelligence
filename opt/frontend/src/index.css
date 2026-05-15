@@ -32,7 +32,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
+    --text: #c3ccdc;
     --text-h: #f3f4f6;
     --bg: #16171d;
     --border: #2e303a;
@@ -49,7 +49,7 @@
     filter: invert(1) brightness(2);
   }
 }
-
+/* 
 #root {
   width: 1126px;
   max-width: 100%;
@@ -60,13 +60,13 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-}
+} */
 
 body {
   margin: 0;
 }
 
-h1,
+/* h1,
 h2 {
   font-family: var(--heading);
   font-weight: 500;
@@ -81,8 +81,8 @@ h1 {
     font-size: 36px;
     margin: 20px 0;
   }
-}
-h2 {
+} */
+/* h2 {
   font-size: 24px;
   line-height: 118%;
   letter-spacing: -0.24px;
@@ -90,11 +90,11 @@ h2 {
   @media (max-width: 1024px) {
     font-size: 20px;
   }
-}
+} */
 p {
   margin: 0;
 }
-
+/* 
 code,
 .counter {
   font-family: var(--mono);
@@ -106,6 +106,5 @@ code,
 code {
   font-size: 15px;
   line-height: 135%;
-  padding: 4px 8px;
   background: var(--code-bg);
-}
+} */

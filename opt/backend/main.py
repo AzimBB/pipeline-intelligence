@@ -5,12 +5,16 @@ import joblib
 import pandas as pd
 import os
 import sys
+import json
+import requests
+import rasterio
+
 
 # Add the root directory to sys.path so we can reuse your utils
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from utils.physics import compute_pressure_profile
 from utils.pathfinding import build_graph, dijkstra
-from utils.graph_loader import load_graph
+# from utils.graph_loader import load_graph
 
 app = FastAPI(title="Pipeline Intelligence API")
 
@@ -28,7 +32,7 @@ SCALER_PATH = "./models/scaler.pkl"
 
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
-nodes, edges = load_graph() # Pre-load for speed
+# nodes, edges = load_graph() # Pre-load for speed
 
 class PredictRequest(BaseModel):
     temperature: float
@@ -50,3 +54,21 @@ async def predict_pressure(data: PredictRequest):
 @app.get("/api/health")
 async def health():
     return {"status": "optimized_engine_online"}
+
+@app.get("/api/pipeline-path")
+async def get_pipeline_path():
+    try:
+        with open("./data/updated_pipeline_last_ready.json", "r") as f:
+            data = json.load(f)
+        
+        # We extract the geometry from the first 'way' element
+        # or combine them if there are multiple.
+        points = []
+        for element in data.get("elements", []):
+            if "geometry" in element:
+                for pt in element["geometry"]:
+                    points.append({"lat": pt["lat"], "lon": pt["lon"]})
+        
+        return points
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
