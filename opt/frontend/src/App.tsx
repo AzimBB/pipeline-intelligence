@@ -10,6 +10,14 @@ interface PipelinePoint {
   alt?: number;
 }
 
+
+interface CompressorStation {
+  station_index: number;
+  lat: number;
+  lon: number;
+  distance_from_source_km: number;
+}
+
 function App() {
   const [inputs, setInputs] = useState({
     temperature: 15.0,
@@ -23,23 +31,32 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [startPoint, setStartPoint] = useState<number>(0);
   const [endPoint, setEndPoint] = useState<number>(1);
+  const [pipelinePoints, setPipelinePoints] = useState<PipelinePoint[]>([]);
+  const [compressorStations, setCompressorStations] = useState<CompressorStation[]>([]); // New state
 
   const [prediction, setPrediction] = useState<number | null>(null);
-  const [pipelinePoints, setPipelinePoints] = useState<PipelinePoint[]>([]);
   const [threshold] = useState(140);
 
-  // Fetch pipeline coordinates from backend
   useEffect(() => {
-    fetch('http://localhost:8000/api/pipeline-path')
-      .then(res => res.json())
-      .then((data: PipelinePoint[]) => {
-        setPipelinePoints(data);
-        if (data.length > 1) {
-          setEndPoint(data.length - 1);
-        }
-      })
-      .catch(err => console.error("Failed to fetch pipeline data:", err));
-  }, []);
+  fetch('http://localhost:8000/api/pipeline-path')
+    .then(res => res.json())
+    .then((data: { points: PipelinePoint[]; stations: CompressorStation[] }) => {
+      // Safely assign both parts of the payload to state
+      const points = data.points || [];
+      const stations = data.stations || [];
+      
+      setPipelinePoints(points);
+      console.log(stations);
+      setCompressorStations(stations);
+      
+      if (points.length > 1) {
+        setEndPoint(points.length - 1);
+      }
+    })
+    .catch(err => console.error("Failed to fetch pipeline data:", err));
+}, []);
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,6 +92,7 @@ function App() {
       }}>
         <PipelineMap 
           points={pipelinePoints} 
+          stations={compressorStations}
           pressure={prediction} 
           threshold={threshold} 
         />

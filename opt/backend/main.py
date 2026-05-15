@@ -61,14 +61,23 @@ async def get_pipeline_path():
         with open("./data/updated_pipeline_last_ready.json", "r") as f:
             data = json.load(f)
         
-        # We extract the geometry from the first 'way' element
-        # or combine them if there are multiple.
         points = []
-        for element in data.get("elements", []):
-            if "geometry" in element:
-                for pt in element["geometry"]:
-                    points.append({"lat": pt["lat"], "lon": pt["lon"]})
+        stations = []
         
-        return points
+        # Pull elements safely
+        elements = data.get("elements", [])
+        if elements:
+            # 1. Grab points from the geometry array
+            if "geometry" in elements[0]:
+                for pt in elements[0]["geometry"]:
+                    points.append({"lat": pt["lat"], "lon": pt["lon"]})
+            
+            # 2. Grab the stations from inside the first element where they are nested!
+            stations = elements[0].get("stations", [])
+        
+        return {
+            "points": points,
+            "stations": stations
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
