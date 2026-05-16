@@ -71,59 +71,16 @@ RUN pip install --upgrade pip \
 # STAGE 2: PROCESS MANAGEMENT & SERVER ORCHESTRATION LAYER
 # =========================================================
 
-# 6) Configure Nginx routing rules to use the dist folder inside the cloned repo
-RUN rm /etc/nginx/sites-enabled/default
-RUN echo " \
-server { \
-    listen 80; \
-    server_name localhost; \
-\
-    # Main frontend production bundle mapping \
-    location / { \
-        root /pipeline-intelligence/opt/frontend/dist; \
-        index index.html index.htm; \
-        try_files \$uri \$uri/ /index.html; \
-    } \
-\
-    # Downstream Reverse Proxy routing context matching port :8000 \
-    location /api/ { \
-        proxy_pass http://127.0.0.1:8000/api/; \
-        proxy_http_version 1.1; \
-        proxy_set_header Upgrade \$http_upgrade; \
-        proxy_set_header Connection 'upgrade'; \
-        proxy_set_header Host \$host; \
-        proxy_cache_bypass \$http_upgrade; \
-    } \
-}" > /etc/nginx/sites-available/pipeline \
-&& ln -s /etc/nginx/sites-available/pipeline /etc/nginx/sites-enabled/
+# 6) Apply Nginx configuration directly from your repository root
+RUN rm /etc/nginx/sites-enabled/default \
+    && cp /pipeline-intelligence/nginx.conf /etc/nginx/sites-available/pipeline \
+    && ln -s /etc/nginx/sites-available/pipeline /etc/nginx/sites-enabled/
 
-# Configure Supervisor process management wrapper to run Nginx and Python simultaneously
-RUN echo " \
-[supervisord] \
-nodaemon=true \
-logfile=/dev/null \
-logfile_maxbytes=0 \
-\
-[program:nginx] \
-command=nginx -g 'daemon off;' \
-stdout_logfile=/dev/stdout \
-stdout_logfile_maxbytes=0 \
-stderr_logfile=/dev/stderr \
-stderr_logfile_maxbytes=0 \
-autorestart=true \
-\
-[program:uvicorn] \
-directory=/pipeline-intelligence/opt/backend \
-command=/pipeline-intelligence/opt/backend/venv/bin/uvicorn main:app --reload --port 8000 --host 0.0.0.0 \
-stdout_logfile=/dev/stdout \
-stdout_logfile_maxbytes=0 \
-stderr_logfile=/dev/stderr \
-stderr_logfile_maxbytes=0 \
-autorestart=true \
-" > /etc/supervisor/conf.d/supervisord.conf
+# 7) Apply Supervisor configuration directly from your repository root
+RUN cp /pipeline-intelligence/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Nginx operates directly on standard port 80 
 EXPOSE 80
 
-# 7) Start Supervisor process control layer
+# Launch Supervisor process control layer
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
