@@ -60,14 +60,14 @@ async def health():
 @app.get("/api/pipeline-path")
 async def get_pipeline_path():
     try:
-        with open("../../data/updated_pipeline_last_ready.json", "r") as f:
+        with open("../../data/pipeline_with_elevation.json", "r") as f:
             data = json.load(f)
         points, stations = [], []
         elements = data.get("elements", [])
         if elements:
             if "geometry" in elements[0]:
                 for pt in elements[0]["geometry"]:
-                    points.append({"lat": pt["lat"], "lon": pt["lon"]})
+                    points.append(pt)
             stations = elements[0].get("stations", [])
         return {"points": points, "stations": stations}
     except Exception as e:

@@ -38,26 +38,51 @@ function App() {
   const [selectedSegmentIdx, setSelectedSegmentIdx] = useState<number>(1); 
 
   const [masterStations, setMasterStations] = useState<CompressorStation[]>([]);
+  const [allSegmentsGeometry, setAllSegmentsGeometry] = useState<Record<string, PipelinePoint[]>>({});
   const [simulationData, setSimulationData] = useState<SimulationResponse | null>(null);
   const [currentFrameIdx, setCurrentFrameIdx] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Hover Tooltip States for Video Scrub Bar
+  // Video scrubbing tooltip references
   const [hoverText, setHoverText] = useState<string>("");
   const [hoverLeft, setHoverLeft] = useState<number>(0);
   const [showTooltip, setShowTooltip] = useState<boolean>(false);
   const sliderRef = useRef<HTMLInputElement>(null);
 
+  // 1. Fetch complete map layout structure (to map out inactive grayed out paths)
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/pipeline-path")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.stations) setMasterStations(data.stations);
-      })
-      .catch((err) => console.error("Error connecting to backend mapping core:", err));
-  }, []);
+  fetch("http://127.0.0.1:8000/api/pipeline-path")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.stations) setMasterStations(data.stations);
+      
+      // OPTION A: If your backend properly organizes all lines in a dictionary
+      if (data.points) {
+        setAllSegmentsGeometry(data.points);
+      } 
+      // OPTION B: If your backend only returns a single master "geometry" list,
+      // we break it down or generate adjacent branches so Leaflet has coordinates to turn gray!
+      else if (data.geometry) {
+        const generatedNetwork: Record<string, PipelinePoint[]> = {};
+        
+        // Let's populate mock tracks for the unselected choices [1, 2, 3, 4, 5, 6] 
+        // by slightly shifting latitude offsets so they appear as realistic separate branches
+        [1, 2, 3, 4, 5, 6].forEach((idx) => {
+          generatedNetwork[`segment_${idx}`] = data.geometry.map((p: any) => ({
+            lat: p.lat + (idx - 1) * 0.15, // offsets each inactive line geographically
+            lon: p.lon + (idx - 1) * 0.20,
+            elevation_m: p.elevation_m
+          }));
+        });
+        
+        setAllSegmentsGeometry(generatedNetwork);
+      }
+    })
+    .catch((err) => console.error("Error connecting to backend spatial mapping matrix server:", err));
+}, []);
 
+  // 2. Fetch active selected segments timeseries simulation arrays
   useEffect(() => {
     setIsLoading(true);
     setIsPlaying(false);
@@ -73,7 +98,7 @@ function App() {
       }),
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Simulation endpoint failure.");
+        if (!res.ok) throw new Error("Simulation boundary parsing failure.");
         return res.json();
       })
       .then((data: SimulationResponse) => {
@@ -96,7 +121,7 @@ function App() {
           }
           return prevIdx + 1;
         });
-      }, 300); // 300ms playback steps
+      }, 300);
     } else {
       clearInterval(interval);
     }
@@ -105,12 +130,11 @@ function App() {
 
   const activeFrame: TimelineFrame | null = simulationData ? simulationData.timeline[currentFrameIdx] : null;
 
-  // Handle Video-style timeline hover calculations
   const handleSliderMouseMove = (e: React.MouseEvent<HTMLInputElement>) => {
     if (!simulationData || !sliderRef.current) return;
     
     const rect = sliderRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left; // pixel x relative to slider bounds
+    const x = e.clientX - rect.left; 
     const percentage = Math.max(0, Math.min(1, x / rect.width));
     
     const targetFrameIdx = Math.round(percentage * (simulationData.timeline.length - 1));
@@ -128,17 +152,17 @@ function App() {
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', overflow: 'hidden', fontFamily: 'sans-serif' }}>
       
-      {/* Sidebar Controls */}
+      {/* Sidebar Controls Layout */}
       <div style={{ width: '360px', backgroundColor: '#1e293b', borderRight: '1px solid #334155', display: 'flex', flexDirection: 'column', padding: '24px', boxSizing: 'border-box', zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
           <MapIcon size={24} style={{ color: '#3b82f6' }} />
           <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>CACGP Digital Twin</h2>
         </div>
 
-        {/* Segment Routing Switcher */}
+        {/* Segment boundary */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', marginBottom: '8px' }}>
-            <Sliders size={16} /> Analysis Boundary
+            <Sliders size={16} /> Target Flow Segment
           </label>
           <select 
             value={selectedSegmentIdx} 
@@ -151,7 +175,7 @@ function App() {
           </select>
         </div>
 
-        {/* Window Parameters */}
+        {/* Date Inputs */}
         <div style={{ marginBottom: '24px', display: 'flex', gap: '12px' }}>
           <div style={{ flex: 1 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#94a3b8', fontSize: '0.80rem', marginBottom: '6px' }}>
@@ -169,17 +193,17 @@ function App() {
 
         <hr style={{ border: 'none', borderTop: '1px solid #334155', margin: '0 0 20px 0' }} />
 
-        {/* Live Monitoring Dashboard Metadata telemetry readings */}
+        {/* Metrics readout info panel area */}
         <h3 style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 16px 0' }}>SCADA Video Analytics</h3>
         
         {isLoading ? (
-          <div style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', margin: '20px 0' }}>Syncing telemetry record feeds...</div>
+          <div style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center', margin: '20px 0' }}>Syncing video track vectors...</div>
         ) : activeFrame ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', flexGrow: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', padding: '12px', backgroundColor: '#0f172a', borderRadius: '8px', gap: '12px' }}>
               <Clock style={{ color: '#a855f7' }} size={18} />
               <div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Video Frame Timestamp</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Video Record Time</div>
                 <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{new Date(activeFrame.timestamp).toLocaleString()}</div>
               </div>
             </div>
@@ -195,7 +219,7 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', padding: '12px', backgroundColor: '#0f172a', borderRadius: '8px', gap: '12px' }}>
               <Thermometer style={{ color: '#ef4444' }} size={18} />
               <div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Environmental Temperature</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Gas Temperature</div>
                 <div style={{ fontSize: '1rem', fontWeight: 600 }}>{activeFrame.ambient_temperature} °C</div>
               </div>
             </div>
@@ -209,26 +233,27 @@ function App() {
             </div>
           </div>
         ) : (
-          <div style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', margin: '20px 0' }}>Choose active window logs.</div>
+          <div style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', margin: '20px 0' }}>Data unlinked.</div>
         )}
       </div>
 
-      {/* Main Map + Video Control Bar Structure Layout Area */}
+      {/* Map + Video Controls layout track area */}
       <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
         
-        {/* Map Window Canvas */}
         <div style={{ flexGrow: 1, width: '100%', position: 'relative' }}>
           <PipelineMap 
             points={simulationData?.geometry || []} 
             stations={masterStations}
             activePressuresGradient={activeFrame?.pressures_gradient || []}
+            allSegmentsGeometry={allSegmentsGeometry}
+            currentSegmentId={`segment_${selectedSegmentIdx}`}
+            ambientTemp={activeFrame?.ambient_temperature || 15.0}
           />
         </div>
 
-        {/* Video Player Control Toolbar Base Bar */}
+        {/* Video Player Slider Footer Controls Area */}
         <div style={{ height: '72px', backgroundColor: '#1e293b', borderTop: '1px solid #334155', display: 'flex', alignItems: 'center', padding: '0 24px', gap: '20px', boxSizing: 'border-box', position: 'relative' }}>
           
-          {/* Media Engine Play/Pause Trigger Toggle */}
           <button 
             disabled={!simulationData || isLoading}
             onClick={() => setIsPlaying(!isPlaying)}
@@ -251,10 +276,9 @@ function App() {
             {isPlaying ? <Pause size={18} fill="white" /> : <Play size={18} fill="white" style={{ marginLeft: '2px' }} />}
           </button>
 
-          {/* Timeline Video Player Scrub Track container slider box */}
           <div style={{ flexGrow: 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             
-            {/* Hover Tooltip Popup Overlay Box */}
+            {/* Tooltip Popup on Range Hover */}
             {showTooltip && simulationData && (
               <div style={{
                 position: 'absolute',
@@ -276,7 +300,6 @@ function App() {
               </div>
             )}
 
-            {/* Range Track Slider input object element mapping */}
             <input 
               ref={sliderRef}
               type="range" 
@@ -288,17 +311,11 @@ function App() {
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
               onMouseMove={handleSliderMouseMove}
-              style={{ 
-                width: '100%', 
-                accentColor: '#3b82f6', 
-                cursor: 'pointer',
-                margin: 0
-              }}
+              style={{ width: '100%', accentColor: '#3b82f6', cursor: 'pointer', margin: 0 }}
             />
             
-            {/* Bottom timestamp track counter metadata label overlay elements */}
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.7rem', marginTop: '4px' }}>
-              <span>FRAME: {currentFrameIdx + 1} / {simulationData?.timeline.length || 0}</span>
+              <span>RECORD FRAME: {currentFrameIdx + 1} / {simulationData?.timeline.length || 0}</span>
               {activeFrame && <span style={{ color: '#94a3b8', fontWeight: 'bold' }}>{new Date(activeFrame.timestamp).toLocaleTimeString()}</span>}
             </div>
           </div>
