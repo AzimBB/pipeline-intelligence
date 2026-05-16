@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Polyline, Popup, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { type LatLngExpression } from 'leaflet';
@@ -62,7 +62,9 @@ function MapViewRecenter({ points }: { points: PipelinePoint[] }) {
 }
 
 export function PipelineMap({ points, stations, activePressuresGradient, allSegmentsGeometry, currentSegmentId, ambientTemp }: PipelineMapProps) {
-    
+    const [showLegend, setShowLegend] = useState<boolean>(true);
+
+
     useEffect(() => {
         const styleId = "leaflet-pulsing-crystal-waves";
         if (!document.getElementById(styleId)) {
@@ -108,28 +110,103 @@ export function PipelineMap({ points, stations, activePressuresGradient, allSegm
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
             
             {/* Visual Dashboard Map Legend Panel Overlay */}
-            <div style={{ position: 'absolute', top: '24px', right: '24px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '14px', zIndex: 1000, color: '#f8fafc', fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', width: '220px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                    <strong style={{ display: 'block', marginBottom: '6px', color: '#94a3b8' }}>Active Fluid Spectrum</strong>
-                    <div style={{ height: '12px', borderRadius: '4px', background: 'linear-gradient(to right, rgb(239, 0, 40), rgb(239, 210, 40), rgb(0, 210, 40))', width: '100%', marginBottom: '4px' }} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                        <span>50 Bar</span> <span>62 Bar</span> <span>74 Bar</span>
+            {!showLegend ? (
+                // Compact Toggle Button when Hidden
+                <button
+                    onClick={() => setShowLegend(true)}
+                    style={{
+                        position: 'absolute',
+                        top: '24px',
+                        right: '24px',
+                        backgroundColor: '#1e293b',
+                        border: '1px solid #334155',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        zIndex: 1000,
+                        color: '#f8fafc',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'background-color 0.2s'
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#334155')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1e293b')}
+                >
+                    <span>📋</span> Show Legend
+                </button>
+            ) : (
+                // Expanded Legend Panel
+                <div style={{ 
+                    position: 'absolute', 
+                    top: '24px', 
+                    right: '24px', 
+                    backgroundColor: '#1e293b', 
+                    border: '1px solid #334155', 
+                    borderRadius: '8px', 
+                    padding: '14px', 
+                    zIndex: 1000, 
+                    color: '#f8fafc', 
+                    fontSize: '0.8rem', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)', 
+                    width: '220px', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '10px' 
+                }}>
+                    {/* Header with Close Button */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ color: '#94a3b8' }}>Map Overlay Legend</strong>
+                        <button
+                            onClick={() => setShowLegend(false)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#64748b',
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                padding: '0 4px',
+                                lineHeight: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'color 0.2s'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+                            title="Hide Legend"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <hr style={{ border: 'none', borderTop: '1px solid #334155', margin: '2px 0' }} />
+
+                    <div>
+                        <strong style={{ display: 'block', marginBottom: '6px', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>Active Fluid Spectrum</strong>
+                        <div style={{ height: '12px', borderRadius: '4px', background: 'linear-gradient(to right, rgb(239, 0, 40), rgb(239, 210, 40), rgb(0, 210, 40))', width: '100%', marginBottom: '4px' }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                            <span>50 Bar</span> <span>62 Bar</span> <span>74 Bar</span>
+                        </div>
+                    </div>
+                    
+                    <hr style={{ border: 'none', borderTop: '1px solid #334155', margin: '4px 0' }} />
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '25px', height: '5px', borderRadius: '2px', backgroundColor: '#00ffff', border: '2px dashed #ffffff' }} />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#00ffff' }}>Crystal Risk Wave</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '25px', height: '4px', borderRadius: '2px', backgroundColor: '#475569' }} />
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Inactive Segments (Gray)</span>
+                        </div>
                     </div>
                 </div>
-                
-                <hr style={{ border: 'none', borderTop: '1px solid #334155', margin: '4px 0' }} />
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '25px', height: '5px', borderRadius: '2px', backgroundColor: '#00ffff', border: '2px dashed #ffffff' }} />
-                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#00ffff' }}>Crystal Risk Wave</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '25px', height: '4px', borderRadius: '2px', backgroundColor: '#475569' }} />
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Inactive Segments (Gray)</span>
-                    </div>
-                </div>
-            </div>
+            )}
 
             <MapContainer
                 center={[41.0, 71.0]}
