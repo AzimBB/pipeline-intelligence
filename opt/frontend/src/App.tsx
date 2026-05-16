@@ -52,7 +52,7 @@ function App() {
 
   // 1. Fetch complete map layout structure (to map out inactive grayed out paths)
   useEffect(() => {
-  fetch("http://127.0.0.1:8000/api/pipeline-path")
+  fetch("/api/pipeline-path")
     .then((res) => res.json())
     .then((data) => {
       if (data.stations) setMasterStations(data.stations);
@@ -88,7 +88,7 @@ function App() {
     setIsPlaying(false);
     setCurrentFrameIdx(0);
 
-    fetch("http://127.0.0.1:8000/api/pipeline/simulate-segment", {
+    fetch("/api/pipeline/simulate-segment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
